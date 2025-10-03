@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab 8.3 - Native APIs Demo</title>
+<style>
+/* styles ตามที่คุณเขียนไว้ก่อนหน้านี้ */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0;padding:20px;background:linear-gradient(135deg,#4CAF50 0%,#45a049 100%);color:white;}
+.container{max-width:900px;margin:0 auto;background:rgba(255,255,255,0.1);padding:30px;border-radius:15px;backdrop-filter:blur(10px);}
+.section{background:rgba(255,255,255,0.1);padding:20px;border-radius:10px;margin-bottom:20px;}
+.button{background:rgba(255,255,255,0.2);border:2px solid white;color:white;padding:12px 24px;border-radius:25px;cursor:pointer;font-size:16px;margin:10px 5px;transition:all 0.3s ease;}
+.button:hover{background:white;color:#4CAF50;transform:translateY(-2px);}
+.result-box{background:rgba(0,0,0,0.2);padding:15px;border-radius:8px;margin-top:15px;font-family:monospace;white-space:pre-wrap;max-height:200px;overflow-y:auto;}
+.file-content{background:rgba(255,255,255,0.9);color:#333;padding:15px;border-radius:8px;margin-top:15px;max-height:300px;overflow-y:auto;font-family:monospace;}
+textarea{width:100%;height:150px;padding:10px;border:none;border-radius:5px;font-family:monospace;font-size:14px;resize:vertical;box-sizing:border-box;}
+.loading{color:#FFD700;}
+.success{color:#90EE90;}
+.error{color:#FF6B6B;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header"><h1>🖥️ Native APIs Demo</h1><p>การใช้ Native APIs ของ Operating System</p></div>
+
+  <!-- File Operations Section -->
+  <div class="section">
+    <h3>📁 File Operations</h3>
+    <button class="button" onclick="openFile()">📂 เปิดไฟล์</button>
+    <button class="button" onclick="exportAgentData()">📊 Export Agent Data</button>
+    <button class="button" onclick="saveCurrentContent()">💾 บันทึกเนื้อหา</button>
+    <div class="result-box" id="fileResult">กดปุ่มเพื่อทดสอบ file operations</div>
+    <div id="fileContent" class="file-content" style="display:none;"></div>
+  </div>
+
+  <!-- Text Editor Section -->
+  <div class="section">
+    <h3>📝 Text Editor</h3>
+    <textarea id="textEditor"># Agent Report
+วันที่: ${new Date().toLocaleDateString('th-TH')}
+## สรุปข้อมูล Agents
+- Agent ID: AG001
+- ชื่อ: Alice Johnson
+- สถานะ: Available
+- จำนวนสาย: 15 calls
+- เวลาเฉลี่ย: 245 วินาที
+## สถิติวันนี้
+- Total Calls: 35
+- Avg Wait Time: 45 วินาที
+- Available Agents: 1 คน
+- Busy Agents: 1 คน</textarea>
+  </div>
+
+  <!-- Notifications Section -->
+  <div class="section">
+    <h3>🔔 Desktop Notifications</h3>
+    <button class="button" onclick="testBasicNotification()">🔔 ทดสอบ Notification</button>
+    <button class="button" onclick="testAgentLogin()">🟢 Agent Login</button>
+    <button class="button" onclick="testCallReceived()">📞 Call Received</button>
+    <button class="button" onclick="testUrgentAlert()">🚨 Urgent Alert</button>
+    <div class="result-box" id="notificationResult">กดปุ่มเพื่อทดสอบ notifications</div>
+  </div>
+
+  <!-- System Tray Section -->
+  <div class="section">
+    <h3>🖱️ System Tray Integration</h3>
+    <button class="button" onclick="testHideToTray()">👁️ ซ่อนไป Tray</button>
+    <button class="button" onclick="testTrayNotification()">🔔 แจ้งเตือนจาก Tray</button>
+    <div class="result-box" id="trayResult">
+ℹ️ System Tray Features:
+• คลิกขวาที่ icon ใน taskbar เพื่อเปิดเมนู
+• เปลี่ยนสถานะ agent ได้จาก tray menu
+• ซ่อน/แสดง app ได้จาก tray
+• ปิดโปรแกรมได้จาก tray menu
+💡 ลองปิด window นี้ - แอปจะซ่อนไปใน system tray!
+    </div>
+  </div>
+</div>
+
+<script>
+// ====================== RENDERER JS ======================
+function showResult(elementId, message, type='info') {
+  const element = document.getElementById(elementId);
+  const timestamp = new Date().toLocaleTimeString('th-TH');
+  element.innerHTML = `[${timestamp}] ${message}`;
+  element.className = `result-box ${type}`;
+}
+
+// --- File Operations ---
+async function openFile() {
+  showResult('fileResult','กำลังเปิด file dialog...','loading');
+  const result = await window.nativeAPI.openFile();
+  if(result.success){
+    showResult('fileResult',`✅ เปิดไฟล์สำเร็จ!\nชื่อ: ${result.fileName}\nที่อยู่: ${result.filePath}\nขนาด: ${result.size} characters`,'success');
+    const contentDiv = document.getElementById('fileContent');
+    contentDiv.style.display='block';
+    contentDiv.innerHTML=`📄 เนื้อหาไฟล์ ${result.fileName}:\n\n${result.content}`;
+    document.getElementById('textEditor').value=result.content;
+  } else if(result.cancelled){ showResult('fileResult','⏹️ ยกเลิกการเปิดไฟล์','info'); }
+}
+
+async function saveCurrentContent() {
+  const content = document.getElementById('textEditor').value;
+  if(!content.trim()){ showResult('fileResult','❌ ไม่มีเนื้อหาให้บันทึก','error'); return; }
+  const result = await window.nativeAPI.saveFile(content, `my-document-${Date.now()}.txt`);
+  if(result.success){
+    showResult('fileResult',`💾 บันทึกสำเร็จ!\nชื่อไฟล์: ${result.fileName}\nตำแหน่ง: ${result.filePath}\nขนาด: ${content.length} chars`,'success');
+  }
+}
+
+// --- Agent Export ---
+async function exportAgentData(){
+  const agentData=['Agent ID,Name,Status,Extension,Department,Total Calls,Avg Call Time',
+                   'AG001,Alice Johnson,Available,1001,Sales,15,245',
+                   'AG002,Bob Smith,Busy,1002,Support,8,312',
+                   'AG003,Carol Lee,Break,1003,Sales,12,198'].join('\n');
+  const result = await window.nativeAPI.saveFile(agentData, `agent-report-${new Date().toISOString().split('T')[0]}.csv`);
+  if(result.success) showResult('fileResult',`📊 ส่งออกสำเร็จ!\nชื่อไฟล์: ${result.fileName}\nตำแหน่ง: ${result.filePath}`,'success');
+}
+
+// --- Notifications ---
+async function testBasicNotification(){await window.nativeAPI.showNotification('Agent Wallboard','นี่คือ desktop notification ทดสอบ! 🎉'); showResult('notificationResult','✅ แสดง notification สำเร็จ','success');}
+async function testAgentLogin(){await window.nativeAPI.notifyAgentEvent('Alice Johnson','login'); showResult('notificationResult','🟢 แจ้งเตือน Agent Login สำเร็จ','success');}
+async function testCallReceived(){await window.nativeAPI.notifyAgentEvent('Bob Smith','call_received'); showResult('notificationResult','📞 แจ้งเตือนสายเข้าสำเร็จ','success');}
+async function testUrgentAlert(){await window.nativeAPI.showNotification('🚨 แจ้งเตือนด่วน!','ระบบโทรศัพท์มีปัญหา กรุณาตรวจสอบด่วน!',true); showResult('notificationResult','🚨 แจ้งเตือนด่วนสำเร็จ','success');}
+
+// --- System Tray ---
+function testHideToTray(){showResult('trayResult','👁️ ซ่อนไป tray...','loading'); window.nativeAPI.hideToTray();}
+function testTrayNotification(){showResult('trayResult','✅ ทดสอบ System Tray สำเร็จ!','success');}
+window.nativeAPI.onStatusChangedFromTray((data)=>{
+  showResult('trayResult',`🔄 เปลี่ยนสถานะจาก Tray\nสถานะใหม่: ${data.newStatus}\nเวลา: ${new Date(data.timestamp).toLocaleString('th-TH')}`,'success');
+});
+</script>
+</body>
+</html>
