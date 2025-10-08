@@ -4,4 +4,5 @@
 ```bash
 npm install
 
-<img width="406" height="285" alt="Screenshot 2568-10-08 at 12 41 40" src="https://github.com/user-attachments/assets/47e599d9-d18f-4cf6-b934-d68aae2f37b6" />
+
+<img width="407" height="174" alt="Screenshot 2568-10-08 at 12 46 17" src="https://github.com/user-attachments/assets/3b7e3a09-14e7-4a0b-b2c4-86252b027387" />
